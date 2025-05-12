@@ -1,6 +1,5 @@
 [![Gatus](.github/assets/logo-with-dark-text.png)](https://gatus.io)
 
-
 ![test](https://github.com/TwiN/gatus/actions/workflows/test.yml/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/TwiN/gatus?)](https://goreportcard.com/report/github.com/TwiN/gatus)
 [![codecov](https://codecov.io/gh/TwiN/gatus/branch/master/graph/badge.svg)](https://codecov.io/gh/TwiN/gatus)
@@ -55,6 +54,7 @@ Have any feedback or questions? [Create a discussion](https://github.com/TwiN/ga
     - [Configuring AWS SES alerts](#configuring-aws-ses-alerts)
     - [Configuring Discord alerts](#configuring-discord-alerts)
     - [Configuring Email alerts](#configuring-email-alerts)
+	- [Configuring SMTP (email) alerts](#configuring-smtp-alerts)
     - [Configuring Gitea alerts](#configuring-gitea-alerts)
     - [Configuring GitHub alerts](#configuring-github-alerts)
     - [Configuring GitLab alerts](#configuring-gitlab-alerts)
@@ -675,6 +675,7 @@ endpoints:
 
 
 #### Configuring Email alerts
+This email alert kept to avoid breaking existing installations, but if you need more features rich Email alert, use then [SMTP alert](#configuring-smtp-alerts) instead, which doing the same and more.
 | Parameter                          | Description                                                                                   | Default       |
 |:-----------------------------------|:----------------------------------------------------------------------------------------------|:--------------|
 | `alerting.email`                   | Configuration for alerts of type `email`                                                      | `{}`          |
@@ -734,6 +735,72 @@ endpoints:
 ```
 
 > ⚠ Some mail servers are painfully slow.
+
+
+
+#### Configuring SMTP alerts
+More flexible Email alerts
+| Parameter                          | Description                                                                                   | Default       |
+|:-----------------------------------|:----------------------------------------------------------------------------------------------|:--------------|
+| `alerting.smtp`                   | Configuration for alerts of type `email`                                                      | `{}`          |
+| `alerting.smtp.from`              | Email used to send the alert                                                                  | Required `""` |
+| `alerting.smtp.username`          | Username of the SMTP server used to send the alert. If empty, uses `alerting.smtp.from`.     | `""`          |
+| `alerting.smtp.password`          | Password of the SMTP server used to send the alert. If empty, no authentication is performed. | `""`          |
+| `alerting.smtp.host`              | Host of the mail server (e.g. `smtp.gmail.com`)                                               | Required `""` |
+| `alerting.smtp.port`              | Port the mail server is listening to (e.g. `587`)                                             | Required `0`  |
+| `alerting.smtp.encryption`       | Type of encryption between gatus and email server. Must be one of: `none`,`StartTLS`,`SSLTLS`    | Required ""  |
+| `alerting.smtp.to`                | Email(s) to send the alerts to                                                                | Required `""` |
+| `alerting.smtp.default-alert`     | Default alert configuration. <br />See [Setting a default alert](#setting-a-default-alert)    | N/A           |
+| `alerting.smtp.client.insecure`   | Whether to skip TLS verification                                                              | `false`       |
+| `alerting.smtp.overrides`         | List of overrides that may be prioritized over the default configuration                      | `[]`          |
+| `alerting.smtp.overrides[].group` | Endpoint group for which the configuration will be overridden by this configuration           | `""`          |
+| `alerting.smtp.overrides[].*`     | See `alerting.smtp.*` parameters                                                             | `{}`          |
+
+```yaml
+alerting:
+  smtp:
+    from: "from@example.com"
+    username: "from@example.com"
+    password: "hunter2"
+    host: "mail.example.com"
+    port: 587
+    to: "recipient1@example.com,recipient2@example.com"
+    client:
+      insecure: false
+    # You can also add group-specific to keys, which will
+    # override the to key above for the specified groups
+    overrides:
+      - group: "core"
+        to: "recipient3@example.com,recipient4@example.com"
+
+endpoints:
+  - name: website
+    url: "https://twin.sh/health"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == UP"
+      - "[RESPONSE_TIME] < 300"
+    alerts:
+      - type: smtp
+        description: "healthcheck failed"
+        send-on-resolved: true
+
+  - name: back-end
+    group: core
+    url: "https://example.org/"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 48h"
+    alerts:
+      - type: smtp
+        description: "healthcheck failed"
+        send-on-resolved: true
+```
+
+> ⚠ Some mail servers are painfully slow.
+
 
 #### Configuring Gitea alerts
 
