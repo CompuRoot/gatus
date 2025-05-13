@@ -3,6 +3,9 @@
 .idea
 .vscode
 
+# Temorary directories
+/tmp
+
 # OS
 .DS_Store
 
